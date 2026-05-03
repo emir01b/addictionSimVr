@@ -1,0 +1,6 @@
+BU DOSYA VE AddictionSim.asmdef DOSYASINI SİLİN.
+
+AddictionSim.asmdef dosyası tüm script'lerin derlenmesini engelliyor.
+Unity Editor'da:
+1. Assets/AddictionSim/AddictionSim.asmdef → sağ tık → Delete
+2. Bu dosyayı da silin.

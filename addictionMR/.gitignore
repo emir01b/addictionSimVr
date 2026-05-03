@@ -1,0 +1,116 @@
+# ===========================
+# Unity Generated Files
+# ===========================
+
+# Library - Unity'nin cache ve derleme çıktıları
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# Memory Profiler Snapshots
+/[Mm]emoryCaptures/
+
+# Recordings
+/[Rr]ecordings/
+
+# Asset Store Packages
+/[Aa]sset[Ss]tore[Tt]ools/
+
+# ===========================
+# Visual Studio / Rider / IDE
+# ===========================
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# ===========================
+# OS Generated Files
+# ===========================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+
+# ===========================
+# Unity Specific
+# ===========================
+
+# Crash Reports
+sysinfo.txt
+crashlytics-build.properties
+
+# Builds (APK, AAB)
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Unity Package Manager
+# Uncomment below if you want to ignore UPM packages
+# /Packages/
+
+# Gradle
+/Assets/Plugins/Android/mainTemplate.gradle.bak
+/Assets/Plugins/Android/launcherTemplate.gradle.bak
+/Assets/Plugins/Android/gradleTemplate.properties.bak
+/Assets/Plugins/Android/baseProjectTemplate.gradle.bak
+
+# Android
+/Assets/Plugins/Android/*.aar.meta
+*.jks
+
+# TextMesh Pro (kullanıcı tercihi - gerekirse kaldırın)
+# /Assets/TextMesh Pro/
+
+# ===========================
+# Antigravity / AI Tools
+# ===========================
+.gemini/
+
+# ===========================
+# Compiled / Binary
+# ===========================
+*.dll
+*.exe
+*.pdb
+!Assets/Plugins/**/*.dll
+!Assets/Oculus/**/*.dll
+
+/.utmp/
+/.cursor/
