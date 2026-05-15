@@ -505,8 +505,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 81c96f42faa3717468d72123fb54f26d, type: 2}
   - {fileID: 11400000, guid: a5a3b60a508856d408a8d28de6f81ff9, type: 2}
   - {fileID: 11400000, guid: 36b6f98440dd114468bd7f1e4f9217e5, type: 2}
-  m_CanvasSize: {x: 400, y: 600}
-  m_CanvasScale: 0.001
+  m_HandCanvasSize: {x: 240, y: 300}
 --- !u!4 &263391908
 Transform:
   m_ObjectHideFlags: 0
