@@ -1,5 +1,16 @@
 # AlcoholSimVR
 
+## Proje Katkı Dağılımı
+
+| Katkı Oranı | İsim | Öğrenci No | Projedeki Katkısı |
+|---|---|---|---|
+| 25% | Ümit Demir | 225541063 | Unity editörü üzerinde kullanıcı panellerini tasarlamış, sistemlerin Unity içerisindeki entegrasyonunu sağlamıştır. |
+| 25% | Emirhan Gündoğdu | 225541069 | Kafa takibinden alınan hareket verilerine göre bulanıklık, vignette, çift görme ve kamera sallantısı efektlerini geliştirmiştir. |
+| 25% | Ahmet Tamer | 225541002 | Denge tahtasını tasarlamış ve kullanıcının performansını ölçen hesaplama sistemini geliştirmiştir. |
+| 25% | Samet Sel | 225541008 | Meta Quest için Passthrough ve kontrolcüsüz el takibi altyapısını kurmuş ve arayüz komutlarına dönüştürülmesini sağlamıştır. |
+
+---
+
 ## Meta Quest Passthrough Tabanlı Alkol Etkisi ve Denge Simülasyonu
 
 **AlcoholSimVR**, Meta Quest 3/3S üzerinde çalışan bir karma gerçeklik ders projesidir. Proje, alkolün denge, görsel algı ve karar verme üzerindeki olumsuz etkilerini kullanıcının kendi fiziksel ortamında deneyimletmeyi amaçlar. Kullanıcı, passthrough görüntü açıkken sanal bir düz tahta üzerinde yürür; sistem seçilen etki seviyesine göre görsel bozulma, baş hareketi gecikmesi ve tahta hareketi uygular. Oturum sonunda kullanıcının tahta üzerinde kalma performansı ölçülür.
