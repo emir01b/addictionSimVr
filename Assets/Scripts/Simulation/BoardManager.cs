@@ -24,6 +24,9 @@ namespace AlcoholSimVR.Simulation
         [SerializeField] private float _swayIntervalMax = 2.0f;
         [SerializeField] private float _swayMoveSpeed = 0.4f;
 
+        [Header("Etki Kademesi")]
+        [SerializeField] private AlcoholEffectLevel _effectLevel = AlcoholEffectLevel.Medium;
+
         [Header("Referanslar")]
         [SerializeField] private Core.SessionTracker _sessionTracker;
         [SerializeField] private Transform _floorReference;
@@ -39,6 +42,11 @@ namespace AlcoholSimVR.Simulation
         private float _effectiveLength;          // spawn sırasında belirlenen gerçek uzunluk
 
         public float ActiveBoardWidth => _boardWidth;
+
+        public void SetEffectLevel(AlcoholEffectLevel level)
+        {
+            _effectLevel = level;
+        }
 
         /// <summary>
         /// Kafadan aşağı dikme tahtaya değiyor mu?
@@ -129,10 +137,11 @@ namespace AlcoholSimVR.Simulation
         {
             while (_spawnedBoard != null)
             {
-                yield return new WaitForSeconds(Random.Range(_swayIntervalMin, _swayIntervalMax));
+                yield return new WaitForSeconds(Random.Range(GetSwayIntervalMin(), GetSwayIntervalMax()));
                 if (_spawnedBoard == null) yield break;
 
-                float targetOffset = Random.Range(-_swayRange, _swayRange);
+                float swayRange = GetSwayRange();
+                float targetOffset = Random.Range(-swayRange, swayRange);
                 Vector3 targetPos = _boardCenterPos + _boardRightDir * targetOffset;
                 yield return StartCoroutine(SlideBoardRoutine(targetPos));
             }
@@ -145,7 +154,7 @@ namespace AlcoholSimVR.Simulation
             float dist = Vector3.Distance(startPos, targetPos);
             if (dist < 0.001f) yield break;
 
-            float duration = dist / _swayMoveSpeed;
+            float duration = dist / Mathf.Max(0.01f, GetSwayMoveSpeed());
             float elapsed = 0f;
             while (elapsed < duration && _spawnedBoard != null)
             {
@@ -159,6 +168,56 @@ namespace AlcoholSimVR.Simulation
         }
 
         // ── Zemin ──
+        private float GetSwayRange()
+        {
+            return _swayRange * GetSwayRangeMultiplier();
+        }
+
+        private float GetSwayIntervalMin()
+        {
+            return Mathf.Max(0.1f, _swayIntervalMin * GetSwayIntervalMultiplier());
+        }
+
+        private float GetSwayIntervalMax()
+        {
+            return Mathf.Max(GetSwayIntervalMin(), _swayIntervalMax * GetSwayIntervalMultiplier());
+        }
+
+        private float GetSwayMoveSpeed()
+        {
+            return _swayMoveSpeed * GetSwaySpeedMultiplier();
+        }
+
+        private float GetSwayRangeMultiplier()
+        {
+            return _effectLevel switch
+            {
+                AlcoholEffectLevel.Low => 0.45f,
+                AlcoholEffectLevel.High => 1.65f,
+                _ => 1f
+            };
+        }
+
+        private float GetSwayIntervalMultiplier()
+        {
+            return _effectLevel switch
+            {
+                AlcoholEffectLevel.Low => 1.45f,
+                AlcoholEffectLevel.High => 0.62f,
+                _ => 1f
+            };
+        }
+
+        private float GetSwaySpeedMultiplier()
+        {
+            return _effectLevel switch
+            {
+                AlcoholEffectLevel.Low => 0.65f,
+                AlcoholEffectLevel.High => 1.35f,
+                _ => 1f
+            };
+        }
+
         private float ResolveFloorY(Transform cam)
         {
             if (_floorReference != null) return _floorReference.position.y;

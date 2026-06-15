@@ -47,6 +47,14 @@ namespace AlcoholSimVR.UI
             _interactable = interactable;
         }
 
+        public void SetVisualColors(Color normal, Color hover, Color pressed)
+        {
+            _normalColor = normal;
+            _hoverColor = hover;
+            _pressedColor = pressed;
+            ApplyVisual(_hovered, false);
+        }
+
         public void OnPointerClick(PointerEventData eventData)
         {
             if (!_interactable)

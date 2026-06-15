@@ -48,6 +48,7 @@ namespace AlcoholSimVR.Core
         private float _backButtonHoldTime;
         private bool _backWasHeld;
         private Coroutine _simulationTimeoutCoroutine;
+        private Simulation.AlcoholEffectLevel _selectedEffectLevel = Simulation.AlcoholEffectLevel.Medium;
 
         private void Awake()
         {
@@ -114,6 +115,7 @@ namespace AlcoholSimVR.Core
 
             if (_infoPanel != null)
             {
+                _infoPanel.OnEffectLevelSelected += HandleEffectLevelSelected;
                 _infoPanel.OnStartPressed += HandleInfoStartPressed;
             }
 
@@ -143,6 +145,7 @@ namespace AlcoholSimVR.Core
 
             if (_infoPanel != null)
             {
+                _infoPanel.OnEffectLevelSelected -= HandleEffectLevelSelected;
                 _infoPanel.OnStartPressed -= HandleInfoStartPressed;
             }
 
@@ -254,6 +257,13 @@ namespace AlcoholSimVR.Core
             }
         }
 
+        private void HandleEffectLevelSelected(Simulation.AlcoholEffectLevel level)
+        {
+            _selectedEffectLevel = level;
+            _alcoholEffects?.SetEffectLevel(level);
+            _boardManager?.SetEffectLevel(level);
+        }
+
         private void HandleSessionEnded(SessionTracker.SessionResult result)
         {
             if (CurrentState == AppState.SimulationActive)
@@ -331,11 +341,14 @@ namespace AlcoholSimVR.Core
 
                 case AppState.InfoPanel:
                     _wristMenu?.SetVisible(false, immediate: false);
+                    _infoPanel?.SetSelectedEffectLevel(_selectedEffectLevel);
                     _infoPanel?.Show();
                     break;
 
                 case AppState.SimulationActive:
                     _infoPanel?.Hide(immediate: true);
+                    _alcoholEffects?.SetEffectLevel(_selectedEffectLevel);
+                    _boardManager?.SetEffectLevel(_selectedEffectLevel);
                     _boardManager?.SpawnBoard();
                     _alcoholEffects?.StartSimulation();
                     _sessionTracker?.BeginSession();

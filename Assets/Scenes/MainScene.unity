@@ -1964,7 +1964,7 @@ MonoBehaviour:
     'Ba\u015Flat' butonuna bas\u0131n."
   _spawnDistance: 1.15
   _verticalOffset: -0.04
-  _panelSizeMeters: {x: 0.42, y: 0.28}
+  _panelSizeMeters: {x: 0.42, y: 0.34}
   _worldScale: 0.001
   _appearDuration: 0.35
   _scaleFrom: 0.8
@@ -3065,12 +3065,20 @@ MonoBehaviour:
   _rollSwayDegrees: 1
   _rollSwayFrequency: 0.4
   _rollPhaseOffset: 1.2
+  _effectLevel: 1
   _alcoholLevel: 0.3
   _startLevel: 0.3
   _targetLevel: 0.7
   _rampDurationSeconds: 30
   _chromaticMax: 0.8
   _chromaticRampSeconds: 10
+  _headMotionDeadZoneDegreesPerSecond: 8
+  _motionActivitySmoothTime: 0.08
+  _enableHeadMotionDrag: 1
+  _enableHeadMotionFrameHold: 1
+  _enableMotionBlur: 1
+  _enablePassthroughStyleEffect: 1
+  _passthroughStyleSmoothTime: 0.045
   _lensDistortionMin: -0.1
   _lensDistortionMax: 0.1
   _lensDistortionPeriodMin: 3
@@ -3086,6 +3094,7 @@ MonoBehaviour:
   _blurPulseDurationMin: 1
   _blurPulseDurationMax: 2
   _blurPulseApertureBoost: 3
+  _enableRandomBlurPulses: 0
 --- !u!114 &1644127266
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3109,6 +3118,7 @@ MonoBehaviour:
   _swayIntervalMin: 0.5
   _swayIntervalMax: 2
   _swayMoveSpeed: 0.4
+  _effectLevel: 1
   _sessionTracker: {fileID: 1644127267}
   _floorReference: {fileID: 0}
 --- !u!114 &1644127267

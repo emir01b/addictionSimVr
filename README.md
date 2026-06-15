@@ -1,145 +1,353 @@
-# 🧠 AlcoholSimVR — Meta Quest 3S MR Alcohol Impairment Simulator
+# AlcoholSimVR
 
-[![Unity Version](https://img.shields.io/badge/Unity-6%20(6000.0.x)-blue.svg?style=flat&logo=unity)](https://unity.com/)
-[![Platform](https://img.shields.io/badge/Platform-Meta%20Quest%203%20%7C%203S-0080FF.svg?style=flat&logo=meta)](https://www.meta.com/quest/)
-[![Mixed Reality](https://img.shields.io/badge/XR-Mixed%20Reality%20%7C%20Passthrough-purple.svg?style=flat)](https://developer.oculus.com/experimental/passthrough/)
-[![Hand Tracking](https://img.shields.io/badge/Input-Hand%20Tracking-green.svg?style=flat)](https://developer.oculus.com/documentation/unity/unity-handtracking/)
+## Meta Quest Passthrough Tabanlı Alkol Etkisi ve Denge Simülasyonu
 
-An immersive **Mixed Reality (MR) Passthrough** simulator designed for the **Meta Quest 3 / 3S** to replicate the physical, visual, and cognitive effects of alcohol impairment. Using controller-free **Hand Tracking**, a realistic procedural **Camera Sway**, and dynamic **URP Post-Processing visual distortions**, users can experience and test their motor skills through a simulated field sobriety test (Plank Walking) in their physical environment.
+**AlcoholSimVR**, Meta Quest 3/3S üzerinde çalışan bir karma gerçeklik ders projesidir. Proje, alkolün denge, görsel algı ve karar verme üzerindeki olumsuz etkilerini kullanıcının kendi fiziksel ortamında deneyimletmeyi amaçlar. Kullanıcı, passthrough görüntü açıkken sanal bir düz tahta üzerinde yürür; sistem seçilen etki seviyesine göre görsel bozulma, baş hareketi gecikmesi ve tahta hareketi uygular. Oturum sonunda kullanıcının tahta üzerinde kalma performansı ölçülür.
 
----
-
-## 🇹🇷 Türkçe Özet / Turkish Summary
-
-**AlcoholSimVR**, Meta Quest 3/3S Passthrough (Karma Gerçeklik) modunda çalışan, alkolün fiziksel ve görsel motor beceriler üzerindeki olumsuz etkilerini simüle eden interaktif bir MR uygulamasıdır. 
-- **El Takibi (Kontrolörsüz):** Arayüz etkileşimleri ve bilek menüsü tamamen el hareketleriyle (pinch & palm-facing) kontrol edilir.
-- **Fiziksel Bozulma:** Kamera sallantısı (`CameraSwayOffset`) ve URP post-processing hacmi ile çift görme, bulanıklık ve denge kaybı hissi gerçekçi bir şekilde taklit edilir.
-- **Düz Tahta Yürüme Testi:** Kullanıcının fiziksel ortamına yerleştirilen sanal/fiziksel bir tahta üzerinde dengede yürüme performansı ölçülür ve oturum sonunda raporlanır.
+Bu README, projeyi ders teslimi ve sunum formatında açıklamak için hazırlanmıştır.
 
 ---
 
-## 🚀 Key Features / Temel Özellikler
+## 1. Proje Künyesi
 
-*   **High-Fidelity MR Passthrough:** Integrates real-world environments with high-resolution color passthrough as the background canvas.
-*   **100% Controllerless Hand Tracking:** Optimized for standard hands-only interaction. Pinches operate UI buttons, and looking at the left palm displays the wrist-mounted menu.
-*   **Procedural Alcohol Distortion (Camera Sway & URP PP):**
-    *   *Visuals:* Blurred vision, double-vision (chromatic aberration/offset), and heavy vignette effects controlled by the blood alcohol simulation.
-    *   *Motor Impairment:* Procedural rotational camera sway on a dedicated `CameraSwayOffset` sub-object ensures the OVRCameraRig's physics bounds remain intact while disorienting the player.
-*   **Straight Plank Walking Sobriety Test:** Procedurally aligns a virtual balance board with physical walking boards. Detects slips, duration, and alignment errors.
-*   **State-driven Session Tracking:** Log performance metrics including task duration, balance slips, peak alcohol percentage, and recovery status.
+| Alan | Açıklama |
+|---|---|
+| Proje adı | AlcoholSimVR |
+| Proje türü | Karma gerçeklik eğitim ve farkındalık simülasyonu |
+| Hedef cihaz | Meta Quest 3 / Meta Quest 3S |
+| Motor | Unity 6 |
+| XR altyapısı | Meta XR / OVR / OpenXR |
+| Görüntüleme | Passthrough Mixed Reality |
+| Etkileşim | El takibi, palm-facing menü, pinch seçim |
+| Ana senaryo | Düz tahta yürüme denge testi |
+| Ölçüm çıktısı | Toplam süre, tahta üzerinde kalma süresi, denge skoru |
+| THS seviyesi | THS 7 - Gerçek ortamda sistem prototipi |
 
 ---
 
-## 🗺️ System Architecture & State Machine
+## 2. Problem Tanımı
 
-The core state flow of the simulator is driven by a central `AppManager.cs` state machine:
+Alkol kullanımının denge, koordinasyon ve görsel algı üzerindeki etkileri çoğu zaman teorik olarak anlatılır. Ancak kullanıcı, bu etkileri kendi bedeni ve kendi çevresi içinde deneyimlemediği için risk algısı zayıf kalabilir.
+
+Bu proje şu probleme odaklanır:
+
+- Alkolün denge kaybı ve algı bozulması üzerindeki etkisini güvenli biçimde deneyimletmek.
+- Gerçek ortamdan kopmadan, kullanıcının fiziksel çevresini görmesini sağlamak.
+- Deneyimi ölçülebilir bir görevle desteklemek.
+- Eğitim ve farkındalık amacıyla kullanılabilecek etkileşimli bir prototip sunmak.
+
+---
+
+## 3. Çözüm Yaklaşımı
+
+AlcoholSimVR, kullanıcının gerçek dünyasını arka plan olarak koruyan passthrough MR yaklaşımını kullanır. Kullanıcı fiziksel ortamını görmeye devam ederken, sahneye sanal bir tahta yerleştirilir. Kullanıcı bu tahta üzerinde yürümeye çalışır.
+
+Simülasyon sırasında:
+
+- Baş hareketine bağlı gecikmeli görsel tepki uygulanır.
+- Düşük, orta ve yüksek olmak üzere üç alkol etki seviyesi seçilebilir.
+- Passthrough görüntüsü siyaha düşmeden korunur.
+- Sanal tahta seçilen seviyeye göre yanal kayma yapabilir.
+- Kullanıcının kafa izdüşümünün tahta üzerinde kalıp kalmadığı ölçülür.
+- Oturum sonunda performans sonucu gösterilir.
+
+---
+
+## 4. Ana Özellikler
+
+### Passthrough MR Deneyimi
+
+Uygulama, Meta Quest passthrough görüntüsünü ana ortam olarak kullanır. Bu sayede kullanıcı tamamen sanal bir ortama alınmaz; gerçek çevresini görmeye devam eder.
+
+İlgili bileşenler:
+
+- `MRRuntimeConfigurator`
+- `PassthroughBootstrap`
+- `OVRPassthroughLayer`
+
+### Kontrolcüsüz El Takibi
+
+Kullanıcı arayüzü kontrolcü gerektirmez. Sol avuç içi kameraya çevrildiğinde bilek menüsü açılır. Sağ elle pinch hareketi yapılarak menü seçimleri gerçekleştirilebilir.
+
+İlgili bileşenler:
+
+- `HandTrackingSetup`
+- `HandPalmDetector`
+- `WristMenuPanel`
+- `MRUIButton`
+
+### Düz Tahta Yürüme Testi
+
+Sanal tahta gerçek oyun alanına göre yerleştirilir. Sistem önce Meta boundary/play area verisini kullanır, mümkün değilse raycast ve fallback yerleşim mantığına geçer.
+
+İlgili bileşenler:
+
+- `BoardManager`
+- `BeamWalkTrigger`
+- `SessionTracker`
+
+### Üç Kademeli Alkol Etkisi
+
+Kullanıcı simülasyon başlamadan önce etki seviyesini seçer:
+
+- **Düşük:** Hafif algı gecikmesi ve düşük tahta hareketi.
+- **Orta:** Belirgin baş hareketi gecikmesi ve denge zorlanması.
+- **Yüksek:** Sert frame-hold hissi, yüksek görsel bozulma ve daha güçlü tahta kayması.
+
+İlgili bileşen:
+
+- `AlcoholEffectController`
+
+### Performans Ölçümü
+
+Oturum sırasında kullanıcının kafa izdüşümü tahta üzerinde mi değil mi ölçülür. Simülasyon sonunda denge yüzdesi hesaplanır.
+
+Ölçülen değerler:
+
+- Toplam değerlendirme süresi
+- Tahta üzerinde kalma süresi
+- Denge skoru yüzdesi
+
+İlgili bileşenler:
+
+- `SessionTracker`
+- `ResultsPanelController`
+
+---
+
+## 5. Sistem Akışı
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Idle : Launch
-    Idle --> MenuOpen : Left Palm Facing Camera (Dot > 0.6)
-    MenuOpen --> InfoPanel : Press "Düz Tahta Yürüme" (Start Test)
-    InfoPanel --> SimulationActive : Press "Başlat" (Begin Walk)
-    SimulationActive --> ResultsScreen : Simulation Finishes / Timer Expires
-    ResultsScreen --> Idle : Long Press Back Button (~1s)
+    [*] --> Idle
+    Idle --> MenuOpen: Sol avuç kameraya bakar
+    MenuOpen --> InfoPanel: Düz Tahta Yürüme seçilir
+    InfoPanel --> SimulationActive: Başlat düğmesine basılır
+    SimulationActive --> ResultsScreen: Süre biter veya tahta sonu geçilir
+    ResultsScreen --> Idle: Kapat / geri dönüş
 ```
 
+Akışı yöneten ana sınıf:
+
+- `Assets/Scripts/Core/AppManager.cs`
+
 ---
 
-## 📁 Project Structure & Scripts Directory
+## 6. Teknik Mimari
 
-All custom logic is located within the `Assets/Scripts/` directory:
-
-```bash
-Assets/Scripts/
-├── Core/
-│   ├── AppManager.cs               # Central application state controller
-│   ├── HandTrackingSetup.cs        # Activates/modifies Meta Quest hand tracking settings
-│   ├── MRRuntimeConfigurator.cs    # Runtime Passthrough layer and URP camera overrides
-│   ├── PassthroughBootstrap.cs     # Quick Passthrough initializer on scene load
-│   └── SessionTracker.cs           # Collects and formats simulation metrics
-├── Simulation/
-│   ├── AlcoholEffectController.cs  # Procedural camera sway & post-processing controller
-│   ├── BeamWalkTrigger.cs          # Logic checking player foot position on the plank
-│   └── BoardManager.cs             # Generates, spawns, and scales the virtual balance board
-├── UI/
-│   ├── CanvasFadeAnimator.cs       # Clean canvas fade-in/out transitions
-│   ├── InfoPanelController.cs      # Displays test rules and pre-start configurations
-│   ├── MRUIButton.cs               # Premium 3D interactive MR buttons (hover/pinch)
-│   ├── ResultsPanelController.cs   # Displays final sobriety statistics
-│   ├── SimulationHudController.cs  # Shows active stats (BAC %, time) during walk
-│   └── WristMenuPanel.cs           # Tracks user wrist, active when palm is turned to face
-└── Utilities/
-    ├── HandPalmDetector.cs         # Mathematical checks for palm-facing-camera detection
-    ├── MRInputHelper.cs            # Custom raycasting and hand-tracking action helpers
-    ├── OVRHandUtility.cs           # OVR hand reference helpers
-    └── WorldSpaceBillboard.cs      # Keeps 3D UI canvases oriented towards the headset
+```text
+Assets/Scripts
+├── Core
+│   ├── AppManager.cs
+│   ├── HandTrackingSetup.cs
+│   ├── MRRuntimeConfigurator.cs
+│   ├── PassthroughBootstrap.cs
+│   └── SessionTracker.cs
+├── Simulation
+│   ├── AlcoholEffectController.cs
+│   ├── BeamWalkTrigger.cs
+│   └── BoardManager.cs
+├── UI
+│   ├── CanvasFadeAnimator.cs
+│   ├── InfoPanelController.cs
+│   ├── MRUIButton.cs
+│   ├── ResultsPanelController.cs
+│   ├── SimulationHudController.cs
+│   └── WristMenuPanel.cs
+└── Utilities
+    ├── HandPalmDetector.cs
+    ├── MRInputHelper.cs
+    ├── OVRHandUtility.cs
+    └── WorldSpaceBillboard.cs
 ```
 
----
+### Mimari kararlar
 
-## 🛠️ Prerequisites & Installation / Kurulum ve Gereksinimler
-
-### Requirements
-*   **Unity Editor:** Version `6 (6000.0.x)` (using Universal Render Pipeline - URP).
-*   **Platform:** Android (Meta Quest 3, 3S, or Quest Pro).
-*   **Meta SDKs:** Meta XR Core SDK / Oculus Integration Package.
-
----
-
-### 🔧 Setup Instructions / Kurulum Adımları
-
-#### 1. Open Project & Import
-Open the project folder inside **Unity Hub** using **Unity 6**.
-
-#### 2. Apply Automated Settings (Proje Ayarlarını Uygula)
-To configure the Android Manifest and XR settings automatically for MR Passthrough and Hands-Only tracking, navigate to:
-> **AlcoholSimVR** ➔ **1 - Proje Ayarlarını Uygula (Passthrough + Eller)**
-
-*This is a mandatory step that sets the hand-tracking manifest options correctly.*
-
-#### 3. Fix / Prepare Current Scene (Mevcut Sahneyi Onar)
-Open `Assets/Scenes/MainScene.unity` and run:
-> **AlcoholSimVR** ➔ **2 - Mevcut Sahneyi Onar (Passthrough + Eller)**
-
-*This automatically adjusts the main camera's background clear flags, sets URP post-processing, and configures the OVRManager for Insight Passthrough.*
-
-#### 4. Build and Deploy (Derleme ve Cihaza Yükleme)
-1. Go to **File ➔ Build Settings**.
-2. Switch platform to **Android**.
-3. Configure the following parameters:
-   * **Scripting Backend:** `IL2CPP`
-   * **Target Architectures:** `ARM64`
-   * **Graphics APIs:** `Vulkan`
-4. Add `MainScene` to the build.
-5. Click **Build and Run** with your Meta Quest connected in Developer Mode.
+- MR ayarları runtime'da zorlanır.
+- `OVRCameraRig` root transformu doğrudan hareket ettirilmez.
+- Passthrough ortamı korunurken görsel etki child offset ve passthrough style parametreleriyle uygulanır.
+- Uygulama durumu tek merkezden `AppManager` ile yönetilir.
+- Test sonucu ayrı bir `SessionTracker` bileşeninde hesaplanır.
 
 ---
 
-## 🎮 How to Play / Nasıl Oynanır
+## 7. THS Değerlendirmesi
 
-1. **Start the App:** Once launched, keep controllers away. Put on your Meta Quest headset.
-2. **Wrist Menu:** Raise your left hand and turn your left palm toward your face. A sleek futuristic wrist panel will fade in.
-3. **Select Test:** Tap the **"Düz Tahta Yürüme"** (Straight Plank Walking) option using your right hand by pinching your thumb and index finger together.
-4. **Prepare Board:** Put a real wooden plank (or draw a line) on your room floor. Line up the virtual blue plank with the physical marker.
-5. **Walking Simulation:** Press **"Başlat"** (Start). Walk along the line. As you move forward, the alcohol effects will slowly ramp up (BAC % increases).
-6. **Impairment:** Your vision will blur, double-vision will intensify, and the camera will swing side-to-side, causing you to lose balance. Avoid stepping off the board!
-7. **Results:** After finishing or falling off, check your final sobriety stats on the floating results board. Hold down the back button to reset back to idle.
+Bu proje **THS 7** seviyesinde değerlendirilmiştir.
+
+| Kriter | Puan |
+|---|---:|
+| Çalışan modül oranı | 4/5 |
+| Gerçek ortam testi | 5/5 |
+| Hata toleransı | 4/5 |
+| Kullanıcı doğrulaması | 4/5 |
+| Performans metriği | 5/5 |
+
+Toplam:
+
+```text
+22 / 25 = 88 / 100
+```
+
+Bu puan, verilen modele göre **THS 7 - Gerçek ortamda sistem prototipi** seviyesine karşılık gelir.
+
+THS 7 gerekçesi:
+
+- Uygulama gerçek passthrough ortamında çalışmak üzere tasarlanmıştır.
+- Kullanıcı fiziksel alanında yürüyüş görevini gerçekleştirir.
+- Sistem yalnızca demo değil, baştan sona çalışan bir prototip akışı sunar.
+- Ölçülebilir performans metriği üretir.
+- El takibi, MR arayüzü, simülasyon ve sonuç ekranı entegre çalışır.
 
 ---
 
-## ⚙️ Customization via Inspector
+## 8. RAMS Özeti
 
-The application is highly customizable. Developers can modify the following parameters in the Inspector:
+### Reliability
 
-*   **Alcohol Thresholds & Ramp Speed:** The rate at which simulated blood alcohol levels (BAC %) rise and the maximum allowed level.
-*   **Camera Sway Parameters:** Customize sway speed, horizontal/vertical amplitude, and random noise to change the "drunkenness" feeling.
-*   **Post-Process Weights:** Adjust maximum chromatic aberration, blur size, and vignette strength.
-*   **Palm Detector Threshold:** Set the dot product value (default `> 0.6`) required for wrist menu activation.
+Uygulama, merkezi durum makinesi ve runtime MR yapılandırması sayesinde temel güvenilirlik sağlar. Passthrough, kamera ve el takibi ayarları başlangıçta zorlanır.
+
+### Availability
+
+APK çıktısı ve Android/Quest hedefi sayesinde cihaz üzerinde çalıştırılabilir. Ana uygulama akışı internet bağlantısına bağlı değildir.
+
+### Maintainability
+
+Kod yapısı `Core`, `Simulation`, `UI` ve `Utilities` olarak ayrılmıştır. Bu yapı yeni özellik eklemeyi ve hata ayıklamayı kolaylaştırır.
+
+### Safety
+
+Passthrough ortamı korunur. Kullanıcı tamamen siyah veya kapalı bir sanal ortama alınmaz. Fiziksel test alanının boş ve güvenli olması gerekir.
 
 ---
 
-## 📜 License
+## 9. Kurulum
 
-This project is open-source and available under the **MIT License**.
-Designed and developed for Meta Quest Mixed Reality exploration.
+### Gereksinimler
+
+- Unity 6
+- Meta Quest 3 veya Meta Quest 3S
+- Meta XR Core SDK / OVR bileşenleri
+- Android build desteği
+- Developer Mode açık Meta Quest cihazı
+
+### Unity içinde proje ayarları
+
+Unity menüsünden:
+
+```text
+AlcoholSimVR > 1 - Proje Ayarlarını Uygula (Passthrough + Eller)
+```
+
+Bu işlem:
+
+- Hand tracking desteğini ayarlar.
+- Passthrough desteğini gerekli hale getirir.
+- Build settings içine ana sahneyi ekler.
+
+### Sahne onarımı
+
+Ana sahneyi açtıktan sonra:
+
+```text
+AlcoholSimVR > 2 - Mevcut Sahneyi Onar (Passthrough + Eller)
+```
+
+Bu işlem:
+
+- Passthrough layer'ı doğrular.
+- Kamera clear flag ve alpha ayarlarını düzeltir.
+- OVRManager yapılandırmasını kontrol eder.
+- El takibi ve bilek menüsü referanslarını bağlar.
+
+### Build
+
+Önerilen build ayarları:
+
+| Ayar | Değer |
+|---|---|
+| Platform | Android |
+| Scripting Backend | IL2CPP |
+| Target Architecture | ARM64 |
+| XR | OpenXR / Meta XR |
+| Ana sahne | `Assets/Scenes/MainScene.unity` |
+
+---
+
+## 10. Kullanım Senaryosu
+
+1. Kullanıcı Meta Quest cihazını takar.
+2. Uygulama passthrough ortamında açılır.
+3. Kullanıcı sol avucunu kameraya çevirir.
+4. Bilek menüsü görünür.
+5. Kullanıcı `Düz Tahta Yürüme` seçeneğini seçer.
+6. Bilgi panelinden düşük, orta veya yüksek etki seviyesi seçilir.
+7. `Başlat` düğmesine basılır.
+8. Sanal tahta gerçek alanda görünür.
+9. Kullanıcı tahta boyunca yürümeye çalışır.
+10. Sistem denge performansını ölçer.
+11. Oturum sonunda sonuç paneli gösterilir.
+
+---
+
+## 11. Güvenlik Notları
+
+Bu proje eğitim ve farkındalık amaçlıdır. Kullanıcı güvenliği için:
+
+- Test alanı boş ve düz olmalıdır.
+- Kullanıcı gerçek dünyayı passthrough ile görmeye devam etmelidir.
+- Gerçek tahta kullanılacaksa yükseltilmiş platform olmamalıdır.
+- Yüksek etki seviyesi kullanılırken gözetmen bulunması önerilir.
+- Simülasyon, gerçek alkol tüketimini teşvik etmez; alkolün olumsuz etkilerini göstermeyi amaçlar.
+
+---
+
+## 12. Teslim Dokümanları
+
+Proje için hazırlanan PDF raporları `docs` klasöründedir:
+
+| Dosya | Puan | İçerik |
+|---|---:|---|
+| [`docs/SWOT.pdf`](docs/SWOT.pdf) | 10 | Güçlü yönler, zayıf yönler, fırsatlar ve tehditler |
+| [`docs/RAMS.pdf`](docs/RAMS.pdf) | 5 | Reliability, Availability, Maintainability, Safety analizi |
+| [`docs/THS_report.pdf`](docs/THS_report.pdf) | 5 | THS 7 puanlaması ve gerekçesi |
+| [`docs/Requirements.pdf`](docs/Requirements.pdf) | 5 | Fonksiyonel ve fonksiyonel olmayan gereksinimler |
+| [`docs/UserScenario.pdf`](docs/UserScenario.pdf) | 5 | Kullanıcı senaryosu ve alternatif akışlar |
+
+Toplam doküman puanı: **30 puan**
+
+---
+
+## 13. Proje Çıktıları
+
+Bu projede teslim edilen ana çıktılar:
+
+- Unity MR uygulama projesi
+- Meta Quest Android APK çıktısı
+- Passthrough tabanlı düz tahta yürüme simülasyonu
+- El takibiyle çalışan MR kullanıcı arayüzü
+- Üç kademeli alkol etkisi sistemi
+- Denge performansı ölçüm sistemi
+- THS 7 raporu ve teknik doküman seti
+
+---
+
+## 14. Geliştirme Fırsatları
+
+Proje THS 7 seviyesinde gerçek ortam prototipi olarak değerlendirilebilir. Daha üst seviye için önerilen geliştirmeler:
+
+- Oturum sonuçlarını CSV/JSON olarak kaydetme
+- Daha geniş kullanıcı testi
+- Cihaz üstü FPS ve gecikme ölçümü
+- Eğitimci paneli
+- Farklı görev modları: reaksiyon testi, çizgi takibi, el-göz koordinasyonu
+- Kullanıcı öncesi/sonrası karşılaştırmalı rapor
+
+---
+
+## 15. Kısa Sunum Metni
+
+AlcoholSimVR, Meta Quest passthrough teknolojisini kullanarak alkolün denge ve algı üzerindeki etkilerini güvenli bir karma gerçeklik ortamında deneyimleten bir ders projesidir. Kullanıcı gerçek çevresini görmeye devam ederken sanal bir düz tahta üzerinde yürür. Sistem seçilen alkol etkisi seviyesine göre görsel gecikme, denge zorlanması ve tahta kayması uygular. Oturum sonunda kullanıcının tahta üzerinde kalma oranı ölçülerek denge skoru üretilir.
+
+Bu yönleriyle proje, yalnızca teorik bir simülasyon değil; gerçek ortamda çalışan, kullanıcıyla etkileşen ve ölçüm alabilen **THS 7 seviyesinde bir sistem prototipidir**.
+

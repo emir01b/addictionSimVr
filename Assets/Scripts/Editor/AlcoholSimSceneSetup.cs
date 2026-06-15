@@ -97,6 +97,11 @@ namespace AlcoholSimVR.Editor
             if (rig != null)
             {
                 SetSerialized(configurator, "_xrCameras", rig.GetComponentsInChildren<Camera>(true));
+                var alcoholFx = Object.FindAnyObjectByType<AlcoholEffectController>();
+                if (alcoholFx != null && rig.centerEyeAnchor != null)
+                {
+                    SetSerialized(alcoholFx, "_cameraSwayOffset", EnsureSwayOffsetInScene(rig.centerEyeAnchor));
+                }
             }
 
             FixEventSystemInScene();
@@ -425,14 +430,29 @@ namespace AlcoholSimVR.Editor
                 centerCam = centerEyeAnchor.gameObject.AddComponent<Camera>();
             }
 
-            var swayGo = new GameObject("CameraSwayOffset");
-            swayGo.transform.SetParent(centerEyeAnchor.parent, false);
-            int index = centerEyeAnchor.GetSiblingIndex();
-            swayGo.transform.SetSiblingIndex(index);
-
-            centerEyeAnchor.SetParent(swayGo.transform, false);
-            Transform result = swayGo.transform;
+            Transform result = EnsureSwayOffsetInScene(centerEyeAnchor);
             return result;
+        }
+
+        private static Transform EnsureSwayOffsetInScene(Transform centerEyeAnchor)
+        {
+            if (centerEyeAnchor.parent != null && centerEyeAnchor.parent.name == "CameraSwayOffset")
+            {
+                return centerEyeAnchor.parent;
+            }
+
+            Transform parent = centerEyeAnchor.parent;
+            Transform existing = parent != null ? parent.Find("CameraSwayOffset") : null;
+            var sway = existing != null ? existing : new GameObject("CameraSwayOffset").transform;
+            sway.SetParent(parent, false);
+            int index = centerEyeAnchor.GetSiblingIndex();
+            sway.SetSiblingIndex(index);
+            sway.localPosition = Vector3.zero;
+            sway.localRotation = Quaternion.identity;
+            sway.localScale = Vector3.one;
+
+            centerEyeAnchor.SetParent(sway, false);
+            return sway;
         }
 
         private static GameObject CreateWristMenu(Transform parent)
@@ -474,7 +494,7 @@ namespace AlcoholSimVR.Editor
 
         private static GameObject CreateInfoPanel()
         {
-            var root = CreateWorldPanel("InfoPanel", new Vector2(420, 280), typeof(InfoPanelController));
+            var root = CreateWorldPanel("InfoPanel", new Vector2(420, 340), typeof(InfoPanelController));
             var controller = root.GetComponent<InfoPanelController>();
             var billboard = root.GetComponent<WorldSpaceBillboard>();
             if (billboard != null)
@@ -482,15 +502,30 @@ namespace AlcoholSimVR.Editor
                 billboard.enabled = false;
             }
 
-            var title = CreateTmp(root.transform, "Title", 20, new Vector2(0, 94));
-            var body = CreateTmp(root.transform, "Body", 15, new Vector2(0, 10));
-            body.rectTransform.sizeDelta = new Vector2(360, 132);
-            var btn = CreateButton(root.transform, "Başlat", new Vector2(0, -150));
+            var title = CreateTmp(root.transform, "Title", 20, new Vector2(0, 122));
+            var body = CreateTmp(root.transform, "Body", 15, new Vector2(0, 46));
+            body.rectTransform.sizeDelta = new Vector2(360, 112);
+            var levelTitle = CreateTmp(root.transform, "EffectLevelTitle", 13, new Vector2(0, -24));
+            levelTitle.text = "ETKI SEVIYESI";
+            var low = CreateButton(root.transform, "DUSUK", new Vector2(-116, -58));
+            var medium = CreateButton(root.transform, "ORTA", new Vector2(0, -58));
+            var high = CreateButton(root.transform, "YUKSEK", new Vector2(116, -58));
+            low.name = "LowEffect_Button";
+            medium.name = "MediumEffect_Button";
+            high.name = "HighEffect_Button";
+            low.GetComponent<RectTransform>().sizeDelta = new Vector2(104, 34);
+            medium.GetComponent<RectTransform>().sizeDelta = new Vector2(104, 34);
+            high.GetComponent<RectTransform>().sizeDelta = new Vector2(104, 34);
+            var btn = CreateButton(root.transform, "Başlat", new Vector2(0, -126));
             var btnRect = btn.GetComponent<RectTransform>();
             btnRect.sizeDelta = new Vector2(170, 42);
-            btnRect.anchoredPosition = new Vector2(0, -104);
+            btnRect.anchoredPosition = new Vector2(0, -126);
             SetSerialized(controller, "_titleText", title);
             SetSerialized(controller, "_bodyText", body);
+            SetSerialized(controller, "_effectLevelText", levelTitle);
+            SetSerialized(controller, "_lowEffectButton", low.GetComponent<MRUIButton>());
+            SetSerialized(controller, "_mediumEffectButton", medium.GetComponent<MRUIButton>());
+            SetSerialized(controller, "_highEffectButton", high.GetComponent<MRUIButton>());
             SetSerialized(controller, "_startButton", btn.GetComponent<MRUIButton>());
             SetSerialized(controller, "_canvasGroup", root.GetComponent<CanvasGroup>());
             SetSerialized(controller, "_panelRoot", root.GetComponent<RectTransform>());
@@ -630,16 +665,45 @@ namespace AlcoholSimVR.Editor
             var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(VolumeProfilePath);
             if (profile != null)
             {
+                EnsurePostProcessProfileComponents(profile);
+                EditorUtility.SetDirty(profile);
                 return profile;
             }
 
             profile = ScriptableObject.CreateInstance<VolumeProfile>();
-            profile.Add<ChromaticAberration>(true);
-            profile.Add<LensDistortion>(true);
-            profile.Add<Vignette>(true);
-            profile.Add<DepthOfField>(true);
+            EnsurePostProcessProfileComponents(profile);
             AssetDatabase.CreateAsset(profile, VolumeProfilePath);
             return profile;
+        }
+
+        private static void EnsurePostProcessProfileComponents(VolumeProfile profile)
+        {
+            if (profile == null)
+            {
+                return;
+            }
+
+            for (int i = profile.components.Count - 1; i >= 0; i--)
+            {
+                if (profile.components[i] == null)
+                {
+                    profile.components.RemoveAt(i);
+                }
+            }
+
+            EnsureVolumeComponent<ChromaticAberration>(profile);
+            EnsureVolumeComponent<LensDistortion>(profile);
+            EnsureVolumeComponent<Vignette>(profile);
+            EnsureVolumeComponent<DepthOfField>(profile);
+            EnsureVolumeComponent<MotionBlur>(profile);
+        }
+
+        private static void EnsureVolumeComponent<T>(VolumeProfile profile) where T : VolumeComponent
+        {
+            if (!profile.TryGet(out T _))
+            {
+                profile.Add<T>(true);
+            }
         }
 
         private static GameObject CreateBeamPrefab(Material mat)

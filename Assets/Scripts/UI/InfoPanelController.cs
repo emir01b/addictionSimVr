@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using AlcoholSimVR.Utilities;
+using AlcoholSimVR.Simulation;
 
 namespace AlcoholSimVR.UI
 {
@@ -14,6 +15,7 @@ namespace AlcoholSimVR.UI
     {
         /// <summary>Başlat düğmesine basıldığında.</summary>
         public event Action OnStartPressed;
+        public event Action<AlcoholEffectLevel> OnEffectLevelSelected;
 
         [Header("UI")]
         [SerializeField] private CanvasGroup _canvasGroup;
@@ -21,6 +23,10 @@ namespace AlcoholSimVR.UI
         [SerializeField] private TextMeshProUGUI _titleText;
         [SerializeField] private TextMeshProUGUI _bodyText;
         [SerializeField] private MRUIButton _startButton;
+        [SerializeField] private TextMeshProUGUI _effectLevelText;
+        [SerializeField] private MRUIButton _lowEffectButton;
+        [SerializeField] private MRUIButton _mediumEffectButton;
+        [SerializeField] private MRUIButton _highEffectButton;
         [SerializeField] private WorldSpaceBillboard _billboard;
 
         [Header("İçerik (Türkçe)")]
@@ -36,7 +42,7 @@ namespace AlcoholSimVR.UI
         [Header("Spawn")]
         [SerializeField] private float _spawnDistance = 1.15f;
         [SerializeField] private float _verticalOffset = -0.04f;
-        [SerializeField] private Vector2 _panelSizeMeters = new Vector2(0.42f, 0.28f);
+        [SerializeField] private Vector2 _panelSizeMeters = new Vector2(0.42f, 0.34f);
         [SerializeField] private float _worldScale = 0.001f;
 
         [Header("Animasyon")]
@@ -45,10 +51,12 @@ namespace AlcoholSimVR.UI
         [SerializeField] private float _scaleTo = 1.0f;
 
         private Coroutine _animRoutine;
+        private AlcoholEffectLevel _selectedEffectLevel = AlcoholEffectLevel.Medium;
 
         private void Awake()
         {
             ResolveReferences();
+            EnsureLevelControls();
             ApplyPanelStyle();
 
             if (_titleText != null)
@@ -66,6 +74,9 @@ namespace AlcoholSimVR.UI
                 _startButton.OnClicked += HandleStartClicked;
             }
 
+            RegisterLevelButtonHandlers();
+            SetSelectedEffectLevel(_selectedEffectLevel);
+
             Hide(immediate: true);
         }
 
@@ -75,6 +86,8 @@ namespace AlcoholSimVR.UI
             {
                 _startButton.OnClicked -= HandleStartClicked;
             }
+
+            UnregisterLevelButtonHandlers();
         }
 
         /// <summary>Paneli kameranın önünde gösterir.</summary>
@@ -116,6 +129,12 @@ namespace AlcoholSimVR.UI
             }
 
             StartCoroutine(HideRoutine());
+        }
+
+        public void SetSelectedEffectLevel(AlcoholEffectLevel level)
+        {
+            _selectedEffectLevel = level;
+            UpdateLevelButtonVisuals();
         }
 
         private void PositionInFrontOfCamera()
@@ -166,6 +185,63 @@ namespace AlcoholSimVR.UI
             OnStartPressed?.Invoke();
         }
 
+        private void HandleLowEffectClicked()
+        {
+            SelectEffectLevel(AlcoholEffectLevel.Low);
+        }
+
+        private void HandleMediumEffectClicked()
+        {
+            SelectEffectLevel(AlcoholEffectLevel.Medium);
+        }
+
+        private void HandleHighEffectClicked()
+        {
+            SelectEffectLevel(AlcoholEffectLevel.High);
+        }
+
+        private void SelectEffectLevel(AlcoholEffectLevel level)
+        {
+            SetSelectedEffectLevel(level);
+            OnEffectLevelSelected?.Invoke(level);
+        }
+
+        private void RegisterLevelButtonHandlers()
+        {
+            if (_lowEffectButton != null)
+            {
+                _lowEffectButton.OnClicked += HandleLowEffectClicked;
+            }
+
+            if (_mediumEffectButton != null)
+            {
+                _mediumEffectButton.OnClicked += HandleMediumEffectClicked;
+            }
+
+            if (_highEffectButton != null)
+            {
+                _highEffectButton.OnClicked += HandleHighEffectClicked;
+            }
+        }
+
+        private void UnregisterLevelButtonHandlers()
+        {
+            if (_lowEffectButton != null)
+            {
+                _lowEffectButton.OnClicked -= HandleLowEffectClicked;
+            }
+
+            if (_mediumEffectButton != null)
+            {
+                _mediumEffectButton.OnClicked -= HandleMediumEffectClicked;
+            }
+
+            if (_highEffectButton != null)
+            {
+                _highEffectButton.OnClicked -= HandleHighEffectClicked;
+            }
+        }
+
         private void ResolveReferences()
         {
             if (_canvasGroup == null)
@@ -187,6 +263,69 @@ namespace AlcoholSimVR.UI
             {
                 _billboard.enabled = false;
             }
+        }
+
+        private void EnsureLevelControls()
+        {
+            RectTransform root = GetComponent<RectTransform>();
+            if (root == null)
+            {
+                return;
+            }
+
+            if (_effectLevelText == null)
+            {
+                Transform existing = transform.Find("EffectLevelTitle");
+                _effectLevelText = existing != null ? existing.GetComponent<TextMeshProUGUI>() : null;
+                if (_effectLevelText == null)
+                {
+                    var titleGo = new GameObject("EffectLevelTitle");
+                    titleGo.transform.SetParent(transform, false);
+                    _effectLevelText = titleGo.AddComponent<TextMeshProUGUI>();
+                }
+            }
+
+            _lowEffectButton = _lowEffectButton != null
+                ? _lowEffectButton
+                : EnsureLevelButton("LowEffect_Button", "DUSUK");
+            _mediumEffectButton = _mediumEffectButton != null
+                ? _mediumEffectButton
+                : EnsureLevelButton("MediumEffect_Button", "ORTA");
+            _highEffectButton = _highEffectButton != null
+                ? _highEffectButton
+                : EnsureLevelButton("HighEffect_Button", "YUKSEK");
+        }
+
+        private MRUIButton EnsureLevelButton(string objectName, string label)
+        {
+            Transform existing = transform.Find(objectName);
+            GameObject buttonGo = existing != null ? existing.gameObject : new GameObject(objectName);
+            buttonGo.transform.SetParent(transform, false);
+
+            var rect = EnsureComponent<RectTransform>(buttonGo);
+            rect.sizeDelta = new Vector2(104f, 34f);
+
+            var image = EnsureComponent<Image>(buttonGo);
+            image.raycastTarget = true;
+
+            var button = EnsureComponent<MRUIButton>(buttonGo);
+            TextMeshProUGUI text = buttonGo.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (text == null)
+            {
+                var textGo = new GameObject("Text");
+                textGo.transform.SetParent(buttonGo.transform, false);
+                text = textGo.AddComponent<TextMeshProUGUI>();
+            }
+
+            text.text = label;
+            text.alignment = TextAlignmentOptions.Center;
+            text.raycastTarget = false;
+            text.rectTransform.anchorMin = Vector2.zero;
+            text.rectTransform.anchorMax = Vector2.one;
+            text.rectTransform.offsetMin = Vector2.zero;
+            text.rectTransform.offsetMax = Vector2.zero;
+
+            return button;
         }
 
         private void ApplyPanelStyle()
@@ -231,7 +370,7 @@ namespace AlcoholSimVR.UI
                 _titleText.color = new Color(0.85f, 0.98f, 1f, 1f);
                 _titleText.raycastTarget = false;
                 _titleText.rectTransform.sizeDelta = new Vector2(370f, 36f);
-                _titleText.rectTransform.anchoredPosition = new Vector2(0f, 94f);
+                _titleText.rectTransform.anchoredPosition = new Vector2(0f, 122f);
             }
 
             if (_bodyText != null)
@@ -243,9 +382,27 @@ namespace AlcoholSimVR.UI
                 _bodyText.alignment = TextAlignmentOptions.TopLeft;
                 _bodyText.color = new Color(0.92f, 0.97f, 1f, 0.95f);
                 _bodyText.raycastTarget = false;
-                _bodyText.rectTransform.sizeDelta = new Vector2(360f, 132f);
-                _bodyText.rectTransform.anchoredPosition = new Vector2(0f, 10f);
+                _bodyText.rectTransform.sizeDelta = new Vector2(360f, 112f);
+                _bodyText.rectTransform.anchoredPosition = new Vector2(0f, 46f);
             }
+
+            if (_effectLevelText != null)
+            {
+                _effectLevelText.text = "ETKI SEVIYESI";
+                _effectLevelText.fontSize = 13f;
+                _effectLevelText.fontStyle = FontStyles.Bold;
+                _effectLevelText.alignment = TextAlignmentOptions.Center;
+                _effectLevelText.color = new Color(0.85f, 0.98f, 1f, 0.92f);
+                _effectLevelText.raycastTarget = false;
+                _effectLevelText.rectTransform.sizeDelta = new Vector2(360f, 24f);
+                _effectLevelText.rectTransform.anchoredPosition = new Vector2(0f, -24f);
+            }
+
+            StyleLevelButton(_lowEffectButton, "DUSUK", new Vector2(-116f, -58f));
+            StyleLevelButton(_mediumEffectButton, "ORTA", new Vector2(0f, -58f));
+            StyleLevelButton(_highEffectButton, "YUKSEK", new Vector2(116f, -58f));
+
+            UpdateLevelButtonVisuals();
 
             if (_startButton != null)
             {
@@ -253,7 +410,7 @@ namespace AlcoholSimVR.UI
                 if (buttonRect != null)
                 {
                     buttonRect.sizeDelta = new Vector2(170f, 42f);
-                    buttonRect.anchoredPosition = new Vector2(0f, -104f);
+                    buttonRect.anchoredPosition = new Vector2(0f, -126f);
                 }
 
                 var label = _startButton.GetComponentInChildren<TextMeshProUGUI>(true);
@@ -268,6 +425,88 @@ namespace AlcoholSimVR.UI
                     label.rectTransform.sizeDelta = new Vector2(170f, 42f);
                     label.rectTransform.anchoredPosition = Vector2.zero;
                 }
+            }
+        }
+
+        private void StyleLevelButton(MRUIButton button, string labelText, Vector2 anchoredPosition)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var rect = button.GetComponent<RectTransform>();
+            if (rect != null)
+            {
+                rect.sizeDelta = new Vector2(104f, 34f);
+                rect.anchoredPosition = anchoredPosition;
+            }
+
+            var image = button.GetComponent<Image>();
+            if (image != null)
+            {
+                image.raycastTarget = true;
+                var outline = EnsureComponent<Outline>(image.gameObject);
+                outline.effectDistance = new Vector2(1.5f, -1.5f);
+            }
+
+            var label = button.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (label != null)
+            {
+                label.text = labelText;
+                label.fontSize = 14f;
+                label.fontStyle = FontStyles.Bold;
+                label.alignment = TextAlignmentOptions.Center;
+                label.enableAutoSizing = true;
+                label.fontSizeMin = 10f;
+                label.fontSizeMax = 14f;
+                label.raycastTarget = false;
+                label.rectTransform.anchorMin = Vector2.zero;
+                label.rectTransform.anchorMax = Vector2.one;
+                label.rectTransform.offsetMin = Vector2.zero;
+                label.rectTransform.offsetMax = Vector2.zero;
+            }
+        }
+
+        private void UpdateLevelButtonVisuals()
+        {
+            ApplyLevelButtonVisual(_lowEffectButton, _selectedEffectLevel == AlcoholEffectLevel.Low);
+            ApplyLevelButtonVisual(_mediumEffectButton, _selectedEffectLevel == AlcoholEffectLevel.Medium);
+            ApplyLevelButtonVisual(_highEffectButton, _selectedEffectLevel == AlcoholEffectLevel.High);
+        }
+
+        private static void ApplyLevelButtonVisual(MRUIButton button, bool selected)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            Color normal = selected
+                ? new Color(1f, 0.88f, 0.28f, 0.95f)
+                : new Color(0.04f, 0.45f, 0.72f, 0.82f);
+            Color hover = selected
+                ? new Color(1f, 0.96f, 0.45f, 1f)
+                : new Color(0f, 0.85f, 1f, 0.95f);
+            Color pressed = new Color(1f, 0.94f, 0.45f, 0.95f);
+            button.SetVisualColors(normal, hover, pressed);
+
+            var image = button.GetComponent<Image>();
+            if (image != null)
+            {
+                var outline = image.GetComponent<Outline>();
+                if (outline != null)
+                {
+                    outline.effectColor = selected
+                        ? new Color(1f, 0.96f, 0.45f, 0.9f)
+                        : new Color(0.85f, 0.98f, 1f, 0.35f);
+                }
+            }
+
+            var label = button.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (label != null)
+            {
+                label.color = selected ? new Color(0.05f, 0.04f, 0.01f, 1f) : Color.white;
             }
         }
 
